@@ -1,0 +1,274 @@
+:root {
+    --bg-color: #1a1a1a;
+    --cabinet-color: #222;
+    --screen-bg: #0a0a0a;
+    --neon-green: #39ff14;
+    --neon-pink: #ff00ff;
+    --neon-cyan: #00ffff;
+    --text-color: #eee;
+    --key-white: #f0f0f0;
+    --key-black: #111;
+}
+
+* {
+    box-sizing: border-box;
+    user-select: none;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-color);
+    font-family: 'Press Start 2P', cursive;
+    color: var(--text-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.arcade-cabinet {
+    background-color: var(--cabinet-color);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.8), inset 0 0 10px rgba(255, 255, 255, 0.1);
+    border: 4px solid #444;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 1000px;
+    width: 95%;
+}
+
+/* --- Screen Layout --- */
+.screen-container {
+    background-color: var(--screen-bg);
+    border: 8px solid #333;
+    border-radius: 20px;
+    position: relative;
+    overflow: hidden;
+    height: 450px;
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+}
+
+.crt-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    background-size: 100% 2px, 3px 100%;
+    pointer-events: none;
+    z-index: 10;
+    opacity: 0.4;
+}
+
+.screen-content {
+    display: flex;
+    height: 100%;
+    padding: 15px;
+    gap: 15px;
+    position: relative;
+    z-index: 1;
+}
+
+/* Main Oscilloscope (Left) */
+.oscilloscope-section {
+    flex: 2;
+    border: 2px solid #333;
+    border-radius: 4px;
+    background: rgba(0, 20, 0, 0.3);
+    position: relative;
+}
+
+canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* Sidebar (Right) */
+.sidebar-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 280px;
+}
+
+.mini-viz-container {
+    display: flex;
+    gap: 10px;
+    height: 80px;
+}
+
+.viz-box {
+    flex: 1;
+    border: 1px solid #444;
+    position: relative;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.viz-box label {
+    position: absolute;
+    top: 2px;
+    left: 4px;
+    font-size: 8px;
+    color: #666;
+}
+
+/* Controls */
+.controls-scroll {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-right: 5px;
+}
+
+/* Scrollbar styling */
+.controls-scroll::-webkit-scrollbar {
+    width: 5px;
+}
+
+.controls-scroll::-webkit-scrollbar-thumb {
+    background: #444;
+}
+
+.control-group {
+    border: 1px solid var(--neon-pink);
+    padding: 8px;
+    border-radius: 4px;
+    background: rgba(20, 0, 20, 0.3);
+}
+
+.control-group label {
+    color: var(--neon-pink);
+    font-size: 10px;
+    display: block;
+    margin-bottom: 8px;
+    text-shadow: 0 0 5px var(--neon-pink);
+}
+
+.waveform-selector {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.wave-btn {
+    background: transparent;
+    border: 1px solid var(--neon-cyan);
+    color: var(--neon-cyan);
+    font-family: inherit;
+    font-size: 8px;
+    padding: 4px 6px;
+    cursor: pointer;
+    flex: 1;
+}
+
+.wave-btn.active {
+    background: var(--neon-cyan);
+    color: #000;
+    box-shadow: 0 0 8px var(--neon-cyan);
+}
+
+.slider-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.slider-container span {
+    font-size: 8px;
+    width: 45px;
+    color: var(--neon-cyan);
+}
+
+input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    background: transparent;
+}
+
+input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 12px;
+    width: 12px;
+    background: var(--neon-green);
+    cursor: pointer;
+    margin-top: -5px;
+    border: 1px solid #fff;
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 2px;
+    background: #444;
+}
+
+/* Keyboard */
+.keyboard-container {
+    display: flex;
+    justify-content: center;
+    background: #111;
+    padding: 15px;
+    border-radius: 0 0 10px 10px;
+    height: 160px;
+}
+
+.key {
+    position: relative;
+    border: 1px solid #000;
+    border-radius: 0 0 4px 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 10px;
+    font-size: 10px;
+}
+
+.key span {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.key.white {
+    background: var(--key-white);
+    width: 60px;
+    height: 100%;
+    z-index: 1;
+    color: #333;
+}
+
+.key.white:active,
+.key.white.active {
+    background: #ccc;
+    transform: translateY(2px);
+}
+
+.key.black {
+    background: var(--key-black);
+    width: 40px;
+    height: 60%;
+    margin-left: -20px;
+    margin-right: -20px;
+    z-index: 2;
+    color: #eee;
+}
+
+.key.black:active,
+.key.black.active {
+    background: #333;
+}
+
+.instructions {
+    text-align: center;
+    font-size: 10px;
+    color: #666;
+}

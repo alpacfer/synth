@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcade Waveform Synth</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="arcade-cabinet">
+        <div class="screen-container">
+            <div class="crt-overlay"></div>
+
+            <div class="screen-content">
+                <div class="oscilloscope-section">
+                    <canvas id="oscilloscope"></canvas>
+                </div>
+
+                <div class="sidebar-section">
+                    <div class="mini-viz-container">
+                        <div class="viz-box">
+                            <label>ENV</label>
+                            <canvas id="envelope-viz"></canvas>
+                        </div>
+                        <div class="viz-box">
+                            <label>FILTER</label>
+                            <canvas id="filter-viz"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="controls-scroll">
+                        <div class="control-group">
+                            <label>WAVEFORM</label>
+                            <div class="waveform-selector">
+                                <button class="wave-btn active" data-wave="sine">SINE</button>
+                                <button class="wave-btn" data-wave="square">SQR</button>
+                                <button class="wave-btn" data-wave="triangle">TRI</button>
+                                <button class="wave-btn" data-wave="sawtooth">SAW</button>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label>FILTER</label>
+                            <div class="slider-container">
+                                <span>CUTOFF</span>
+                                <input type="range" id="cutoff" min="20" max="20000" value="2000" step="10">
+                            </div>
+                            <div class="slider-container">
+                                <span>RES</span>
+                                <input type="range" id="resonance" min="0" max="20" value="1" step="0.1">
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label>ENVELOPE</label>
+                            <div class="slider-container">
+                                <span>ATK</span>
+                                <input type="range" id="attack" min="0" max="2" value="0.1" step="0.01">
+                            </div>
+                            <div class="slider-container">
+                                <span>DEC</span>
+                                <input type="range" id="decay" min="0" max="2" value="0.2" step="0.01">
+                            </div>
+                            <div class="slider-container">
+                                <span>SUS</span>
+                                <input type="range" id="sustain" min="0" max="1" value="0.5" step="0.01">
+                            </div>
+                            <div class="slider-container">
+                                <span>REL</span>
+                                <input type="range" id="release" min="0" max="3" value="0.5" step="0.01">
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label>MASTER</label>
+                            <div class="slider-container">
+                                <span>VOL</span>
+                                <input type="range" id="volume" min="0" max="1" value="0.5" step="0.01">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="keyboard-container">
+            <div class="key white" data-note="C4" data-key="z"><span>Z</span></div>
+            <div class="key black" data-note="C#4" data-key="s"><span>S</span></div>
+            <div class="key white" data-note="D4" data-key="x"><span>X</span></div>
+            <div class="key black" data-note="D#4" data-key="d"><span>D</span></div>
+            <div class="key white" data-note="E4" data-key="c"><span>C</span></div>
+            <div class="key white" data-note="F4" data-key="v"><span>V</span></div>
+            <div class="key black" data-note="F#4" data-key="g"><span>G</span></div>
+            <div class="key white" data-note="G4" data-key="b"><span>B</span></div>
+            <div class="key black" data-note="G#4" data-key="h"><span>H</span></div>
+            <div class="key white" data-note="A4" data-key="n"><span>N</span></div>
+            <div class="key black" data-note="A#4" data-key="j"><span>J</span></div>
+            <div class="key white" data-note="B4" data-key="m"><span>M</span></div>
+            <div class="key white" data-note="C5" data-key=","><span>,</span></div>
+        </div>
+
+        <div class="instructions">
+            <p>CLICK ANYWHERE TO START AUDIO ENGINE</p>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+
+</html>
