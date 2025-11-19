@@ -46,6 +46,10 @@
 
                         <div class="control-group">
                             <label>FILTER</label>
+                            <div class="filter-mode">
+                                <button class="filter-btn active" data-filter="lowpass">LOW</button>
+                                <button class="filter-btn" data-filter="highpass">HIGH</button>
+                            </div>
                             <div class="slider-container">
                                 <span>CUTOFF</span>
                                 <input type="range" id="cutoff" min="20" max="20000" value="2000" step="10">
@@ -104,9 +108,6 @@
             <div class="key white" data-note="C5" data-key=","><span>,</span></div>
         </div>
 
-        <div class="instructions">
-            <p>CLICK ANYWHERE TO START AUDIO ENGINE</p>
-        </div>
     </div>
     <script src="script.js"></script>
 </body>
