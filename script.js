@@ -17,6 +17,7 @@ let lastNoteFrequency = 440; // Used to stabilize the oscilloscope
 // --- Configuration & Constants ---
 const settings = {
     waveform: 'sine',
+    filterType: 'lowpass',
     cutoff: 2000,
     resonance: 1,
     attack: 0.1,
@@ -94,7 +95,7 @@ function playNote(note) {
     osc.frequency.value = freq;
 
     // Configure Filter
-    filter.type = 'lowpass';
+    filter.type = settings.filterType;
     filter.frequency.value = settings.cutoff;
     filter.Q.value = settings.resonance;
 
@@ -279,11 +280,21 @@ function drawFilter() {
     const qHeight = Math.min(settings.resonance * (h / 4), h / 2);
 
     ctx.beginPath();
-    ctx.moveTo(0, h / 2);
-    // Draw curve
-    ctx.quadraticCurveTo(x, h / 2, x, (h / 2) - qHeight);
-    ctx.quadraticCurveTo(x, h, w, h);
+    if (settings.filterType === 'lowpass') {
+        ctx.moveTo(0, h / 2);
+        ctx.quadraticCurveTo(x, h / 2, x, (h / 2) - qHeight);
+        ctx.quadraticCurveTo(x, h, w, h);
+    } else {
+        ctx.moveTo(0, h);
+        ctx.quadraticCurveTo(x, h, x, (h / 2) - qHeight);
+        ctx.quadraticCurveTo(x, h / 2, w, h / 2);
+    }
     ctx.stroke();
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+    ctx.font = `${10 * window.devicePixelRatio}px 'Press Start 2P'`;
+    ctx.textBaseline = 'top';
+    ctx.fillText(settings.filterType === 'lowpass' ? 'LP' : 'HP', 6 * window.devicePixelRatio, 6 * window.devicePixelRatio);
 }
 
 // --- Input Handling ---
@@ -297,7 +308,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 2. Sliders
+    // 2. Filter Type Buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            settings.filterType = e.target.dataset.filter;
+
+            Object.values(oscs).forEach(({ filter }) => {
+                filter.type = settings.filterType;
+            });
+        });
+    });
+
+    // 3. Sliders
     const inputs = ['cutoff', 'resonance', 'attack', 'decay', 'sustain', 'release', 'volume'];
     inputs.forEach(id => {
         const el = document.getElementById(id);
