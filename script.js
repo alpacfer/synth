@@ -17,6 +17,7 @@ let lastNoteFrequency = 440; // Used to stabilize the oscilloscope
 // --- Configuration & Constants ---
 const settings = {
     waveform: 'sine',
+    filterType: 'lowpass',
     cutoff: 2000,
     resonance: 1,
     attack: 0.1,
@@ -68,9 +69,6 @@ function initAudio() {
     // Start the visual loop
     resizeCanvases(); // Fix canvas resolution
     drawLoop();
-
-    // Remove the "Click to start" overlay text if desired
-    document.querySelector('.instructions p').innerText = "AUDIO ENGINE ACTIVE";
 }
 
 // --- Note Control ---
@@ -97,7 +95,7 @@ function playNote(note) {
     osc.frequency.value = freq;
 
     // Configure Filter
-    filter.type = 'lowpass';
+    filter.type = settings.filterType;
     filter.frequency.value = settings.cutoff;
     filter.Q.value = settings.resonance;
 
@@ -282,10 +280,15 @@ function drawFilter() {
     const qHeight = Math.min(settings.resonance * (h / 4), h / 2);
 
     ctx.beginPath();
-    ctx.moveTo(0, h / 2);
-    // Draw curve
-    ctx.quadraticCurveTo(x, h / 2, x, (h / 2) - qHeight);
-    ctx.quadraticCurveTo(x, h, w, h);
+    if (settings.filterType === 'highpass') {
+        ctx.moveTo(0, h);
+        ctx.quadraticCurveTo(x, h, x, (h / 2) - qHeight);
+        ctx.quadraticCurveTo(x, h / 2, w, h / 2);
+    } else {
+        ctx.moveTo(0, h / 2);
+        ctx.quadraticCurveTo(x, h / 2, x, (h / 2) - qHeight);
+        ctx.quadraticCurveTo(x, h, w, h);
+    }
     ctx.stroke();
 }
 
@@ -297,6 +300,20 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.wave-btn').forEach(b => b.classList.remove('active'));
             e.target.classList.add('active');
             settings.waveform = e.target.dataset.wave;
+        });
+    });
+
+    // Filter type buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            settings.filterType = e.target.dataset.type;
+
+            // Live update active filters
+            Object.values(oscs).forEach(({ filter }) => {
+                filter.type = settings.filterType;
+            });
         });
     });
 
