@@ -44,24 +44,21 @@ const sliderHotkeys = {
     '2': 'highCutoff',
     '3': 'attack',
     '4': 'release',
-    '5': 'volume',
-    '6': 'nudgeSpeed'
+    '5': 'volume'
 };
 
 // Per-slider keyboard nudges (two letters per slider)
 const sliderAdjustHotkeys = {
     'o': { id: 'lowCutoff', direction: -1 },
     'p': { id: 'lowCutoff', direction: 1 },
-    'k': { id: 'highCutoff', direction: -1 },
-    'l': { id: 'highCutoff', direction: 1 },
+    'l': { id: 'highCutoff', direction: -1 },
+    'k': { id: 'highCutoff', direction: 1 },
     'q': { id: 'attack', direction: -1 },
     'w': { id: 'attack', direction: 1 },
     'e': { id: 'release', direction: -1 },
     'r': { id: 'release', direction: 1 },
     'u': { id: 'volume', direction: -1 },
-    'i': { id: 'volume', direction: 1 },
-    't': { id: 'nudgeSpeed', direction: -1 },
-    'y': { id: 'nudgeSpeed', direction: 1 }
+    'i': { id: 'volume', direction: 1 }
 };
 
 // --- Audio Engine Initialization ---
@@ -340,7 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // 2. Sliders
-    const inputs = ['lowCutoff', 'highCutoff', 'attack', 'release', 'volume', 'nudgeSpeed'];
+    const inputs = ['lowCutoff', 'highCutoff', 'attack', 'release', 'volume'];
     inputs.forEach(id => {
         const el = document.getElementById(id);
         el.addEventListener('input', (e) => {
@@ -370,10 +367,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const nudgeSlider = (el, direction) => {
         if (!el) return;
         const step = parseFloat(el.step || '1');
-        const multiplier = uiTuning.nudgeMultiplier || 1;
         const min = parseFloat(el.min);
         const max = parseFloat(el.max);
-        const next = Math.min(max, Math.max(min, parseFloat(el.value) + direction * step * multiplier));
+        const next = Math.min(max, Math.max(min, parseFloat(el.value) + direction * step));
         if (next !== parseFloat(el.value)) {
             el.value = next;
             el.dispatchEvent(new Event('input'));
