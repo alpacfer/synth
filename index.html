@@ -52,49 +52,58 @@
                     </div>
 
                     <div class="controls-panel">
-                        <div class="control-group">
-                            <label>WAVEFORM</label>
-                            <div class="waveform-selector">
-                                <button class="wave-btn active" data-wave="sine">SINE</button>
-                                <button class="wave-btn" data-wave="square">SQR</button>
-                                <button class="wave-btn" data-wave="triangle">TRI</button>
-                                <button class="wave-btn" data-wave="sawtooth">SAW</button>
+                        <div class="control-grid">
+                            <div class="control-group">
+                                <label>WAVEFORM</label>
+                                <div class="waveform-selector">
+                                    <button class="wave-btn active" data-wave="sine">SINE</button>
+                                    <button class="wave-btn" data-wave="square">SQR</button>
+                                    <button class="wave-btn" data-wave="triangle">TRI</button>
+                                    <button class="wave-btn" data-wave="sawtooth">SAW</button>
+                                </div>
+                                <div class="toggle-row">
+                                    <button id="octaveToggle" class="toggle-btn">OCTAVE</button>
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="control-group">
-                            <label>FILTERS</label>
-                            <div class="slider-container" data-hotkey="1">
-                                <span>LP CUT (O-/P+)</span>
-                                <input type="range" id="lowCutoff" min="100" max="20000" value="20000" step="10">
+                            <div class="control-group">
+                                <label>FILTERS</label>
+                                <div class="slider-container" data-hotkey="1">
+                                    <span>LP CUT (O-/P+)</span>
+                                    <input type="range" id="lowCutoff" min="100" max="20000" value="20000" step="10">
+                                </div>
+                                <div class="slider-container" data-hotkey="2">
+                                    <span>HP CUT (L-/K+)</span>
+                                    <input type="range" id="highCutoff" min="20" max="8000" value="20" step="10">
+                                </div>
                             </div>
-                            <div class="slider-container" data-hotkey="2">
-                                <span>HP CUT (L-/K+)</span>
-                                <input type="range" id="highCutoff" min="20" max="8000" value="20" step="10">
-                            </div>
-                        </div>
 
-                        <div class="control-group">
-                            <label>ENVELOPE</label>
-                            <div class="slider-container" data-hotkey="3">
-                                <span>ATK (Q-/W+)</span>
-                                <input type="range" id="attack" min="0" max="2" value="0.1" step="0.01">
+                            <div class="control-group">
+                                <label>ENVELOPE</label>
+                                <div class="slider-container" data-hotkey="3">
+                                    <span>ATK (Q-/W+)</span>
+                                    <input type="range" id="attack" min="0" max="2" value="0.1" step="0.01">
+                                </div>
+                                <div class="slider-container" data-hotkey="4">
+                                    <span>REL (E-/R+)</span>
+                                    <input type="range" id="release" min="0" max="3" value="0.5" step="0.01">
+                                </div>
                             </div>
-                            <div class="slider-container" data-hotkey="4">
-                                <span>REL (E-/R+)</span>
-                                <input type="range" id="release" min="0" max="3" value="0.5" step="0.01">
-                            </div>
-                        </div>
 
-                        <div class="control-group">
-                            <label>MASTER</label>
-                            <div class="slider-container" data-hotkey="5">
-                                <span>VOL (U-/I+)</span>
-                                <input type="range" id="volume" min="0" max="1" value="0.5" step="0.01">
-                            </div>
-                            <div class="slider-container" data-hotkey="6">
-                                <span>SPEED (T-/Y+)</span>
-                                <input type="range" id="nudgeSpeed" min="1" max="10" value="3" step="1">
+                            <div class="control-group">
+                                <label>MASTER</label>
+                                <div class="slider-container" data-hotkey="5">
+                                    <span>VOL (U-/I+)</span>
+                                    <input type="range" id="volume" min="0" max="1" value="0.5" step="0.01">
+                                </div>
+                                <div class="slider-container">
+                                    <span>DELAY</span>
+                                    <input type="range" id="delayTime" min="0" max="1.5" value="0" step="0.05">
+                                </div>
+                                <div class="slider-container" data-hotkey="6">
+                                    <span>SPEED (T-/Y+)</span>
+                                    <input type="range" id="nudgeSpeed" min="1" max="10" value="3" step="1">
+                                </div>
                             </div>
                         </div>
 

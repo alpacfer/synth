@@ -8,6 +8,8 @@ let audioCtx;
 let analyser;
 let compressor;
 let masterGain;
+let delayNode;
+let delayGain;
 
 // Track active oscillators to handle polyphony (multiple notes at once)
 // Format: { 'NoteName': { osc: OscillatorNode, noteGain: GainNode, lowpass: BiquadFilterNode, highpass: BiquadFilterNode } }
@@ -21,7 +23,9 @@ const settings = {
     highCutoff: 20,
     attack: 0.1,
     release: 0.5,
-    volume: 0.5
+    volume: 0.5,
+    octaves: false,
+    delayTime: 0
 };
 
 const uiTuning = {
@@ -81,13 +85,22 @@ function initAudio() {
     compressor.attack.value = 0;
     compressor.release.value = 0.25;
 
-    // 3. Master Gain (Volume Control)
+    // 3. Delay bus
+    delayNode = audioCtx.createDelay(2.5);
+    delayNode.delayTime.value = settings.delayTime;
+    delayGain = audioCtx.createGain();
+    delayGain.gain.value = 0.35;
+
+    delayNode.connect(delayGain);
+
+    // 4. Master Gain (Volume Control)
     masterGain = audioCtx.createGain();
     masterGain.gain.value = settings.volume;
 
-    // 4. Connect Graph: Analyser -> Compressor -> Master -> Speakers
+    // 5. Connect Graph: Analyser -> Compressor -> Master -> Speakers
     analyser.connect(compressor);
     compressor.connect(masterGain);
+    delayGain.connect(analyser);
     masterGain.connect(audioCtx.destination);
 
     // Start the visual loop
@@ -96,20 +109,9 @@ function initAudio() {
 }
 
 // --- Note Control ---
-function playNote(note) {
-    if (!audioCtx) initAudio();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-
-    // Stop existing note if key is pressed again quickly
-    if (oscs[note]) {
-        stopNote(note);
-    }
-
-    const freq = notes[note];
-    lastNoteFrequency = freq;
+function createVoice(noteId, frequency, baseNote) {
     const t = audioCtx.currentTime;
 
-    // Create Nodes
     const osc = audioCtx.createOscillator();
     const lowpass = audioCtx.createBiquadFilter();
     const highpass = audioCtx.createBiquadFilter();
@@ -117,7 +119,7 @@ function playNote(note) {
 
     // Configure Oscillator
     osc.type = settings.waveform;
-    osc.frequency.value = freq;
+    osc.frequency.value = frequency;
 
     // Configure Filters
     lowpass.type = 'lowpass';
@@ -129,9 +131,7 @@ function playNote(note) {
     highpass.Q.value = 0.707;
 
     // Configure Envelope (AR)
-    // Start at 0
     noteGain.gain.setValueAtTime(0, t);
-    // Attack: Ramp to peak (0.3 is a safe peak volume per note)
     noteGain.gain.linearRampToValueAtTime(0.3, t + settings.attack);
 
     // Connect: Osc -> LP -> HP -> NoteGain -> Analyser (Mix Bus)
@@ -139,42 +139,73 @@ function playNote(note) {
     lowpass.connect(highpass);
     highpass.connect(noteGain);
     noteGain.connect(analyser);
+    if (delayNode) {
+        noteGain.connect(delayNode);
+    }
 
     osc.start();
 
     // Store reference
-    oscs[note] = { osc, noteGain, lowpass, highpass };
+    oscs[noteId] = { osc, noteGain, lowpass, highpass, baseNote };
+}
 
-    // UI Update
-    const keyEl = document.querySelector(`.key[data-note="${note}"]`);
+function highlightKey(baseNote) {
+    const keyEl = document.querySelector(`.key[data-note="${baseNote}"]`);
     if (keyEl) keyEl.classList.add('active');
 }
 
-function stopNote(note) {
-    if (!oscs[note]) return;
-
-    const { osc, noteGain } = oscs[note];
-    const t = audioCtx.currentTime;
-
-    // Release Phase
-    noteGain.gain.cancelScheduledValues(t);
-    noteGain.gain.setValueAtTime(noteGain.gain.value, t); // Hold current value
-    noteGain.gain.linearRampToValueAtTime(0, t + settings.release);
-
-    osc.stop(t + settings.release);
-
-    // Cleanup Object
-    // We use a closure check to ensure we don't delete a *new* note if pressed rapidly
-    const activeOsc = oscs[note].osc;
-    setTimeout(() => {
-        if (oscs[note] && oscs[note].osc === activeOsc) {
-            delete oscs[note];
-        }
-    }, settings.release * 1000);
-
-    // UI Update
-    const keyEl = document.querySelector(`.key[data-note="${note}"]`);
+function unhighlightKey(baseNote) {
+    const stillActive = Object.values(oscs).some(v => v.baseNote === baseNote);
+    if (stillActive) return;
+    const keyEl = document.querySelector(`.key[data-note="${baseNote}"]`);
     if (keyEl) keyEl.classList.remove('active');
+}
+
+function playNote(note) {
+    if (!audioCtx) initAudio();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    // Stop existing note if key is pressed again quickly
+    if (oscs[note]) {
+        stopNote(note);
+    }
+
+    const freq = notes[note];
+    lastNoteFrequency = freq;
+
+    createVoice(note, freq, note);
+    if (settings.octaves) {
+        createVoice(`${note}-oct`, freq / 2, note);
+    }
+
+    highlightKey(note);
+}
+
+function stopNote(note) {
+    const ids = [note, `${note}-oct`];
+
+    ids.forEach(id => {
+        if (!oscs[id]) return;
+
+        const { osc, noteGain, baseNote } = oscs[id];
+        const t = audioCtx.currentTime;
+
+        // Release Phase
+        noteGain.gain.cancelScheduledValues(t);
+        noteGain.gain.setValueAtTime(noteGain.gain.value, t); // Hold current value
+        noteGain.gain.linearRampToValueAtTime(0, t + settings.release);
+
+        osc.stop(t + settings.release);
+
+        // Cleanup Object
+        const activeOsc = oscs[id].osc;
+        setTimeout(() => {
+            if (oscs[id] && oscs[id].osc === activeOsc) {
+                delete oscs[id];
+                unhighlightKey(baseNote);
+            }
+        }, settings.release * 1000);
+    });
 }
 
 // --- Visualizations ---
@@ -338,7 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // 2. Sliders
-    const inputs = ['lowCutoff', 'highCutoff', 'attack', 'release', 'volume', 'nudgeSpeed'];
+    const inputs = ['lowCutoff', 'highCutoff', 'attack', 'release', 'volume', 'delayTime', 'nudgeSpeed'];
     inputs.forEach(id => {
         const el = document.getElementById(id);
         el.addEventListener('input', (e) => {
@@ -354,6 +385,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 masterGain.gain.setTargetAtTime(settings.volume, audioCtx.currentTime, 0.1);
             }
 
+            if (id === 'delayTime' && delayNode) {
+                delayNode.delayTime.setTargetAtTime(settings.delayTime, audioCtx.currentTime, 0.02);
+            }
+
             // Live update active filters
             if (id === 'lowCutoff' || id === 'highCutoff') {
                 Object.values(oscs).forEach(({ lowpass, highpass }) => {
@@ -364,7 +399,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 3. Slider hotkeys for quick focus + arrow tweak
+    // 3. Octave toggle
+    const octaveToggle = document.getElementById('octaveToggle');
+    octaveToggle.addEventListener('click', () => {
+        settings.octaves = !settings.octaves;
+        octaveToggle.classList.toggle('active', settings.octaves);
+    });
+
+    // 4. Slider hotkeys for quick focus + arrow tweak
     const sliderInputs = Array.from(document.querySelectorAll('.controls-panel input[type="range"]'));
     let focusedSliderIndex = 0;
     let holdInterval;
@@ -450,7 +492,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 4. Keyboard Events for notes
+    // 5. Keyboard Events for notes
     const handleKey = (key, type) => {
         const note = keyMap[key.toLowerCase()];
         if (!note) return;
@@ -464,13 +506,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.addEventListener('keyup', e => handleKey(e.key, 'up'));
 
-    // 5. Mouse Events.
+    // 6. Mouse Events.
     document.querySelectorAll('.key').forEach(k => {
         k.addEventListener('mousedown', () => playNote(k.dataset.note));
         k.addEventListener('mouseup', () => stopNote(k.dataset.note));
         k.addEventListener('mouseleave', () => stopNote(k.dataset.note));
     });
 
-    // 6. Init Audio on Interaction
+    // 7. Init Audio on Interaction
     document.body.addEventListener('click', initAudio, { once: true });
 });
