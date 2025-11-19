@@ -25,7 +25,7 @@ const settings = {
 };
 
 const uiTuning = {
-    nudgeMultiplier: 3
+    nudgeMultiplier: 4
 };
 
 const notes = {
@@ -44,7 +44,8 @@ const sliderHotkeys = {
     '2': 'highCutoff',
     '3': 'attack',
     '4': 'release',
-    '5': 'volume'
+    '5': 'volume',
+    '6': 'nudgeSpeed'
 };
 
 // Per-slider keyboard nudges (two letters per slider)
@@ -337,7 +338,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // 2. Sliders
-    const inputs = ['lowCutoff', 'highCutoff', 'attack', 'release', 'volume'];
+    const inputs = ['lowCutoff', 'highCutoff', 'attack', 'release', 'volume', 'nudgeSpeed'];
     inputs.forEach(id => {
         const el = document.getElementById(id);
         el.addEventListener('input', (e) => {
@@ -364,15 +365,40 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // 3. Slider hotkeys for quick focus + arrow tweak
-    const nudgeSlider = (el, direction) => {
+    const sliderInputs = Array.from(document.querySelectorAll('.controls-panel input[type="range"]'));
+    let focusedSliderIndex = 0;
+    let holdInterval;
+
+    const nudgeSlider = (el, direction, accelerated = false) => {
         if (!el) return;
         const step = parseFloat(el.step || '1');
         const min = parseFloat(el.min);
         const max = parseFloat(el.max);
-        const next = Math.min(max, Math.max(min, parseFloat(el.value) + direction * step));
+        const stride = accelerated ? step * uiTuning.nudgeMultiplier : step;
+        const next = Math.min(max, Math.max(min, parseFloat(el.value) + direction * stride));
         if (next !== parseFloat(el.value)) {
             el.value = next;
             el.dispatchEvent(new Event('input'));
+        }
+    };
+
+    const focusSlider = (index) => {
+        if (!sliderInputs.length) return;
+        focusedSliderIndex = ((index % sliderInputs.length) + sliderInputs.length) % sliderInputs.length;
+        sliderInputs[focusedSliderIndex].focus();
+    };
+
+    const startHoldAdjust = (el, direction) => {
+        if (!el) return;
+        clearInterval(holdInterval);
+        nudgeSlider(el, direction);
+        holdInterval = setInterval(() => nudgeSlider(el, direction, true), 90);
+    };
+
+    const stopHoldAdjust = () => {
+        if (holdInterval) {
+            clearInterval(holdInterval);
+            holdInterval = null;
         }
     };
 
@@ -388,18 +414,39 @@ document.addEventListener('DOMContentLoaded', () => {
         if (id) {
             const el = document.getElementById(id);
             el.focus();
+            const idx = sliderInputs.indexOf(el);
+            if (idx >= 0) focusedSliderIndex = idx;
+            e.preventDefault();
+            return;
+        }
+
+        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+            if (!sliderInputs.length) return;
+            const delta = e.key === 'ArrowUp' ? -1 : 1;
+            const activeIndex = sliderInputs.indexOf(document.activeElement);
+            if (activeIndex >= 0) focusedSliderIndex = activeIndex;
+            focusSlider(focusedSliderIndex + delta);
+            e.preventDefault();
+            return;
+        }
+
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+            if (!sliderInputs.length) return;
+            const direction = e.key === 'ArrowRight' ? 1 : -1;
+            if (document.activeElement?.type !== 'range') {
+                focusSlider(focusedSliderIndex);
+            }
+            const target = document.activeElement?.type === 'range'
+                ? document.activeElement
+                : sliderInputs[focusedSliderIndex];
+            startHoldAdjust(target, direction);
+            e.preventDefault();
         }
     });
 
-    document.addEventListener('keydown', e => {
-        const focused = document.activeElement;
-        if (!focused || focused.type !== 'range') return;
-
-        if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
-            nudgeSlider(focused, 1);
-        }
-        if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
-            nudgeSlider(focused, -1);
+    document.addEventListener('keyup', e => {
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+            stopHoldAdjust();
         }
     });
 

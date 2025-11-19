@@ -69,22 +69,33 @@ body {
 }
 
 .screen-content {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
     height: 100%;
     padding: 8px;
     gap: 8px;
     position: relative;
     z-index: 1;
     min-width: 0;
+    align-items: stretch;
+}
+
+.main-column {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+    height: 100%;
 }
 
 /* Main Oscilloscope (Left) */
 .oscilloscope-section {
-    flex: 1.6;
+    flex: 1 1 auto;
     border: 2px solid #333;
     border-radius: 4px;
     background: rgba(0, 20, 0, 0.3);
     position: relative;
+    min-height: 0;
 }
 
 canvas {
@@ -95,12 +106,12 @@ canvas {
 
 /* Sidebar (Right) */
 .sidebar-section {
-    flex: 1;
     display: flex;
     flex-direction: column;
     gap: 10px;
     min-width: 260px;
     max-width: 340px;
+    height: 100%;
 }
 
 .mini-viz-container {
@@ -223,15 +234,6 @@ input[type=range]::-webkit-slider-runnable-track {
     border-radius: 4px;
 }
 
-.control-hint {
-    font-size: 8px;
-    color: #aaa;
-    text-align: center;
-    border: 1px dashed #444;
-    padding: 6px;
-    border-radius: 4px;
-}
-
 /* Keyboard */
 .keyboard-container {
     display: flex;
@@ -240,7 +242,6 @@ input[type=range]::-webkit-slider-runnable-track {
     padding: 8px;
     border-radius: 0 0 10px 10px;
     height: 104px;
-    margin-top: auto;
 }
 
 .key {
