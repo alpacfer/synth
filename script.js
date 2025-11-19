@@ -24,6 +24,10 @@ const settings = {
     volume: 0.5
 };
 
+const uiTuning = {
+    nudgeMultiplier: 3
+};
+
 const notes = {
     'C4': 261.63, 'C#4': 277.18, 'D4': 293.66, 'D#4': 311.13,
     'E4': 329.63, 'F4': 349.23, 'F#4': 369.99, 'G4': 392.00,
@@ -337,6 +341,11 @@ document.addEventListener('DOMContentLoaded', () => {
     inputs.forEach(id => {
         const el = document.getElementById(id);
         el.addEventListener('input', (e) => {
+            if (id === 'nudgeSpeed') {
+                uiTuning.nudgeMultiplier = parseFloat(e.target.value);
+                return;
+            }
+
             settings[id] = parseFloat(e.target.value);
 
             // Live update Master Volume
