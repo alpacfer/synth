@@ -368,6 +368,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const sliderInputs = Array.from(document.querySelectorAll('.controls-panel input[type="range"]'));
     let focusedSliderIndex = 0;
     let holdInterval;
+    let holdDirection = 0;
 
     const nudgeSlider = (el, direction, accelerated = false) => {
         if (!el) return;
@@ -390,7 +391,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const startHoldAdjust = (el, direction) => {
         if (!el) return;
+        if (holdInterval && holdDirection === direction) return;
         clearInterval(holdInterval);
+        holdDirection = direction;
         nudgeSlider(el, direction);
         holdInterval = setInterval(() => nudgeSlider(el, direction, true), 90);
     };
@@ -400,6 +403,7 @@ document.addEventListener('DOMContentLoaded', () => {
             clearInterval(holdInterval);
             holdInterval = null;
         }
+        holdDirection = 0;
     };
 
     document.addEventListener('keydown', e => {
