@@ -334,7 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.addEventListener('keyup', e => handleKey(e.key, 'up'));
 
-    // 4. Mouse Events
+    // 4. Mouse Events.
     document.querySelectorAll('.key').forEach(k => {
         k.addEventListener('mousedown', () => playNote(k.dataset.note));
         k.addEventListener('mouseup', () => stopNote(k.dataset.note));
