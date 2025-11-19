@@ -98,7 +98,7 @@ canvas {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
     min-width: 260px;
     max-width: 340px;
 }
@@ -107,6 +107,7 @@ canvas {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    flex: 1;
 }
 
 .viz-box {
@@ -126,22 +127,12 @@ canvas {
 }
 
 /* Controls */
-.controls-scroll {
-    flex: 1;
-    overflow-y: auto;
+.controls-panel {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    padding-right: 4px;
-}
-
-/* Scrollbar styling */
-.controls-scroll::-webkit-scrollbar {
-    width: 5px;
-}
-
-.controls-scroll::-webkit-scrollbar-thumb {
-    background: #444;
+    flex: 1.2;
+    justify-content: space-between;
 }
 
 .control-group {
@@ -155,7 +146,7 @@ canvas {
     color: var(--neon-pink);
     font-size: 10px;
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     text-shadow: 0 0 5px var(--neon-pink);
 }
 
@@ -182,29 +173,6 @@ canvas {
     box-shadow: 0 0 8px var(--neon-cyan);
 }
 
-.filter-mode {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 4px;
-    margin-bottom: 6px;
-}
-
-.filter-btn {
-    background: transparent;
-    border: 1px solid var(--neon-pink);
-    color: var(--neon-pink);
-    font-family: inherit;
-    font-size: 8px;
-    padding: 4px 6px;
-    cursor: pointer;
-}
-
-.filter-btn.active {
-    background: var(--neon-pink);
-    color: #000;
-    box-shadow: 0 0 8px var(--neon-pink);
-}
-
 .slider-container {
     display: flex;
     align-items: center;
@@ -214,8 +182,12 @@ canvas {
 
 .slider-container span {
     font-size: 8px;
-    width: 45px;
+    width: 70px;
     color: var(--neon-cyan);
+}
+
+.slider-container:focus-within span {
+    color: var(--neon-green);
 }
 
 input[type=range] {
@@ -238,6 +210,15 @@ input[type=range]::-webkit-slider-runnable-track {
     width: 100%;
     height: 2px;
     background: #444;
+}
+
+.control-hint {
+    font-size: 8px;
+    color: #aaa;
+    text-align: center;
+    border: 1px dashed #444;
+    padding: 6px;
+    border-radius: 4px;
 }
 
 /* Keyboard */
@@ -296,4 +277,3 @@ input[type=range]::-webkit-slider-runnable-track {
 .key.black.active {
     background: #333;
 }
-

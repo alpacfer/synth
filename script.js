@@ -10,19 +10,16 @@ let compressor;
 let masterGain;
 
 // Track active oscillators to handle polyphony (multiple notes at once)
-// Format: { 'NoteName': { osc: OscillatorNode, gain: GainNode, filter: BiquadFilterNode } }
+// Format: { 'NoteName': { osc: OscillatorNode, noteGain: GainNode, lowpass: BiquadFilterNode, highpass: BiquadFilterNode } }
 const oscs = {};
 let lastNoteFrequency = 440; // Used to stabilize the oscilloscope
 
 // --- Configuration & Constants ---
 const settings = {
     waveform: 'sine',
-    filterType: 'lowpass',
-    cutoff: 2000,
-    resonance: 1,
+    lowCutoff: 20000,
+    highCutoff: 20,
     attack: 0.1,
-    decay: 0.2,
-    sustain: 0.5,
     release: 0.5,
     volume: 0.5
 };
@@ -36,6 +33,28 @@ const notes = {
 const keyMap = {
     'z': 'C4', 's': 'C#4', 'x': 'D4', 'd': 'D#4', 'c': 'E4', 'v': 'F4',
     'g': 'F#4', 'b': 'G4', 'h': 'G#4', 'n': 'A4', 'j': 'A#4', 'm': 'B4', ',': 'C5'
+};
+
+const sliderHotkeys = {
+    '1': 'lowCutoff',
+    '2': 'highCutoff',
+    '3': 'attack',
+    '4': 'release',
+    '5': 'volume'
+};
+
+// Per-slider keyboard nudges (two letters per slider)
+const sliderAdjustHotkeys = {
+    'o': { id: 'lowCutoff', direction: -1 },
+    'p': { id: 'lowCutoff', direction: 1 },
+    'l': { id: 'highCutoff', direction: -1 },
+    'k': { id: 'highCutoff', direction: 1 },
+    'q': { id: 'attack', direction: -1 },
+    'w': { id: 'attack', direction: 1 },
+    'e': { id: 'release', direction: -1 },
+    'r': { id: 'release', direction: 1 },
+    'u': { id: 'volume', direction: -1 },
+    'i': { id: 'volume', direction: 1 }
 };
 
 // --- Audio Engine Initialization ---
@@ -87,35 +106,39 @@ function playNote(note) {
 
     // Create Nodes
     const osc = audioCtx.createOscillator();
-    const filter = audioCtx.createBiquadFilter();
+    const lowpass = audioCtx.createBiquadFilter();
+    const highpass = audioCtx.createBiquadFilter();
     const noteGain = audioCtx.createGain();
 
     // Configure Oscillator
     osc.type = settings.waveform;
     osc.frequency.value = freq;
 
-    // Configure Filter
-    filter.type = settings.filterType;
-    filter.frequency.value = settings.cutoff;
-    filter.Q.value = settings.resonance;
+    // Configure Filters
+    lowpass.type = 'lowpass';
+    lowpass.frequency.value = settings.lowCutoff;
+    lowpass.Q.value = 0.707;
 
-    // Configure Envelope (ADSR)
+    highpass.type = 'highpass';
+    highpass.frequency.value = settings.highCutoff;
+    highpass.Q.value = 0.707;
+
+    // Configure Envelope (AR)
     // Start at 0
     noteGain.gain.setValueAtTime(0, t);
     // Attack: Ramp to peak (0.3 is a safe peak volume per note)
     noteGain.gain.linearRampToValueAtTime(0.3, t + settings.attack);
-    // Decay: Ramp down to sustain level
-    noteGain.gain.linearRampToValueAtTime(0.3 * settings.sustain, t + settings.attack + settings.decay);
 
-    // Connect: Osc -> Filter -> NoteGain -> Analyser (Mix Bus)
-    osc.connect(filter);
-    filter.connect(noteGain);
+    // Connect: Osc -> LP -> HP -> NoteGain -> Analyser (Mix Bus)
+    osc.connect(lowpass);
+    lowpass.connect(highpass);
+    highpass.connect(noteGain);
     noteGain.connect(analyser);
 
     osc.start();
 
     // Store reference
-    oscs[note] = { osc, noteGain, filter };
+    oscs[note] = { osc, noteGain, lowpass, highpass };
 
     // UI Update
     const keyEl = document.querySelector(`.key[data-note="${note}"]`);
@@ -241,20 +264,16 @@ function drawEnvelope() {
     ctx.lineWidth = lineWidth;
     ctx.strokeStyle = '#00ffff';
 
-    // ADSR visual duration (fixed 3 seconds total width)
-    const pxPerSec = w / 3;
+    const pxPerSec = w / 2.5;
 
     const atk = settings.attack * pxPerSec;
-    const dec = settings.decay * pxPerSec;
     const rel = settings.release * pxPerSec;
-    const susH = h - (settings.sustain * h);
 
     ctx.beginPath();
     ctx.moveTo(0, h); // Start bottom left
     ctx.lineTo(atk, 0); // Attack peak
-    ctx.lineTo(atk + dec, susH); // Decay to sustain
-    ctx.lineTo(atk + dec + (0.5 * pxPerSec), susH); // Hold sustain 0.5s
-    ctx.lineTo(atk + dec + (0.5 * pxPerSec) + rel, h); // Release
+    ctx.lineTo(atk + (0.5 * pxPerSec), 0); // Hold sustain 0.5s
+    ctx.lineTo(atk + (0.5 * pxPerSec) + rel, h); // Release
     ctx.stroke();
 }
 
@@ -266,35 +285,40 @@ function drawFilter() {
 
     ctx.clearRect(0, 0, w, h);
     ctx.lineWidth = 2 * window.devicePixelRatio;
+
+    // Map Logarithmic Frequency helper
+    const mapFreq = (val, min, max) => {
+        const minLog = Math.log(min);
+        const maxLog = Math.log(max);
+        const valLog = Math.log(Math.max(min, val));
+        const ratio = (valLog - minLog) / (maxLog - minLog);
+        return ratio * w;
+    };
+
+    const lpX = mapFreq(settings.lowCutoff, 20, 20000);
+    const hpX = mapFreq(settings.highCutoff, 20, 20000);
+
+    // Low-pass curve
     ctx.strokeStyle = '#ff00ff';
-
-    // Map Logarithmic Frequency
-    const minLog = Math.log(20);
-    const maxLog = Math.log(20000);
-    const valLog = Math.log(Math.max(20, settings.cutoff));
-
-    const ratio = (valLog - minLog) / (maxLog - minLog);
-    const x = ratio * w;
-
-    // Resonance Peak
-    const qHeight = Math.min(settings.resonance * (h / 4), h / 2);
-
     ctx.beginPath();
-    if (settings.filterType === 'lowpass') {
-        ctx.moveTo(0, h / 2);
-        ctx.quadraticCurveTo(x, h / 2, x, (h / 2) - qHeight);
-        ctx.quadraticCurveTo(x, h, w, h);
-    } else {
-        ctx.moveTo(0, h);
-        ctx.quadraticCurveTo(x, h, x, (h / 2) - qHeight);
-        ctx.quadraticCurveTo(x, h / 2, w, h / 2);
-    }
+    ctx.moveTo(0, h / 2);
+    ctx.quadraticCurveTo(lpX, h / 2, lpX, h * 0.35);
+    ctx.quadraticCurveTo(lpX, h, w, h);
     ctx.stroke();
 
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+    // High-pass curve
+    ctx.strokeStyle = '#39ff14';
+    ctx.beginPath();
+    ctx.moveTo(0, h);
+    ctx.quadraticCurveTo(hpX, h, hpX, h * 0.45);
+    ctx.quadraticCurveTo(hpX, h / 2, w, h / 2);
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
     ctx.font = `${10 * window.devicePixelRatio}px 'Press Start 2P'`;
     ctx.textBaseline = 'top';
-    ctx.fillText(settings.filterType === 'lowpass' ? 'LP' : 'HP', 6 * window.devicePixelRatio, 6 * window.devicePixelRatio);
+    ctx.fillText('LP', 6 * window.devicePixelRatio, 6 * window.devicePixelRatio);
+    ctx.fillText('HP', 6 * window.devicePixelRatio, 18 * window.devicePixelRatio);
 }
 
 // --- Input Handling ---
@@ -308,21 +332,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 2. Filter Type Buttons
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            e.target.classList.add('active');
-            settings.filterType = e.target.dataset.filter;
-
-            Object.values(oscs).forEach(({ filter }) => {
-                filter.type = settings.filterType;
-            });
-        });
-    });
-
-    // 3. Sliders
-    const inputs = ['cutoff', 'resonance', 'attack', 'decay', 'sustain', 'release', 'volume'];
+    // 2. Sliders
+    const inputs = ['lowCutoff', 'highCutoff', 'attack', 'release', 'volume'];
     inputs.forEach(id => {
         const el = document.getElementById(id);
         el.addEventListener('input', (e) => {
@@ -332,17 +343,58 @@ document.addEventListener('DOMContentLoaded', () => {
             if (id === 'volume' && masterGain) {
                 masterGain.gain.setTargetAtTime(settings.volume, audioCtx.currentTime, 0.1);
             }
+
             // Live update active filters
-            if (id === 'cutoff' || id === 'resonance') {
-                Object.values(oscs).forEach(({ filter }) => {
-                    if (id === 'cutoff') filter.frequency.value = settings.cutoff;
-                    if (id === 'resonance') filter.Q.value = settings.resonance;
+            if (id === 'lowCutoff' || id === 'highCutoff') {
+                Object.values(oscs).forEach(({ lowpass, highpass }) => {
+                    if (id === 'lowCutoff') lowpass.frequency.value = settings.lowCutoff;
+                    if (id === 'highCutoff') highpass.frequency.value = settings.highCutoff;
                 });
             }
         });
     });
 
-    // 3. Keyboard Events
+    // 3. Slider hotkeys for quick focus + arrow tweak
+    const nudgeSlider = (el, direction) => {
+        if (!el) return;
+        const step = parseFloat(el.step || '1');
+        const min = parseFloat(el.min);
+        const max = parseFloat(el.max);
+        const next = Math.min(max, Math.max(min, parseFloat(el.value) + direction * step));
+        if (next !== parseFloat(el.value)) {
+            el.value = next;
+            el.dispatchEvent(new Event('input'));
+        }
+    };
+
+    document.addEventListener('keydown', e => {
+        const adjust = sliderAdjustHotkeys[e.key.toLowerCase()];
+        if (adjust) {
+            const el = document.getElementById(adjust.id);
+            nudgeSlider(el, adjust.direction);
+            return;
+        }
+
+        const id = sliderHotkeys[e.key];
+        if (id) {
+            const el = document.getElementById(id);
+            el.focus();
+        }
+    });
+
+    document.addEventListener('keydown', e => {
+        const focused = document.activeElement;
+        if (!focused || focused.type !== 'range') return;
+
+        if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+            nudgeSlider(focused, 1);
+        }
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+            nudgeSlider(focused, -1);
+        }
+    });
+
+    // 4. Keyboard Events for notes
     const handleKey = (key, type) => {
         const note = keyMap[key.toLowerCase()];
         if (!note) return;
@@ -351,17 +403,18 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     document.addEventListener('keydown', e => {
+        if (sliderHotkeys[e.key]) return; // Reserve hotkeys for sliders
         if (!e.repeat) handleKey(e.key, 'down');
     });
     document.addEventListener('keyup', e => handleKey(e.key, 'up'));
 
-    // 4. Mouse Events.
+    // 5. Mouse Events.
     document.querySelectorAll('.key').forEach(k => {
         k.addEventListener('mousedown', () => playNote(k.dataset.note));
         k.addEventListener('mouseup', () => stopNote(k.dataset.note));
         k.addEventListener('mouseleave', () => stopNote(k.dataset.note));
     });
 
-    // 5. Init Audio on Interaction
+    // 6. Init Audio on Interaction
     document.body.addEventListener('click', initAudio, { once: true });
 });
