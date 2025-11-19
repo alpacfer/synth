@@ -68,9 +68,6 @@ function initAudio() {
     // Start the visual loop
     resizeCanvases(); // Fix canvas resolution
     drawLoop();
-
-    // Remove the "Click to start" overlay text if desired
-    document.querySelector('.instructions p').innerText = "AUDIO ENGINE ACTIVE";
 }
 
 // --- Note Control ---
